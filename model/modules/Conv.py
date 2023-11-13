@@ -13,6 +13,7 @@ class DownConv(nn.Module):
         kernel_size=3,
         padding=0,
         stride=2,
+        dilation=1,
         gn_channels=8,
         dropout=0.1,
     ):
@@ -30,7 +31,9 @@ class DownConv(nn.Module):
         self.downnorm = nn.GroupNorm(gn_channels, in_channels)
         convs = []
         for _ in range(depth):
-            convs.append(nn.Conv2d(in_channels, out_channels, kernel_size, 1, padding))
+            convs.append(
+                nn.Conv2d(in_channels, out_channels, kernel_size, 1, padding, dilation)
+            )
             convs.append(nn.GroupNorm(gn_channels, out_channels))
             convs.append(nn.ReLU())
             convs.append(nn.Dropout(dropout))
@@ -68,6 +71,7 @@ class UpConv(nn.Module):
         kernel_size=3,
         padding=0,
         stride=2,
+        dilation=1,
         gn_channels=8,
         dropout=0.1,
     ):
@@ -86,7 +90,9 @@ class UpConv(nn.Module):
         convs = []
         in_channels = out_channels * 2
         for _ in range(depth):
-            convs.append(nn.Conv2d(in_channels, out_channels, kernel_size, 1, padding))
+            convs.append(
+                nn.Conv2d(in_channels, out_channels, kernel_size, 1, padding, dilation)
+            )
             convs.append(nn.GroupNorm(gn_channels, out_channels))
             convs.append(nn.ReLU())
             convs.append(nn.Dropout(dropout))
@@ -125,6 +131,7 @@ class MaskUpConv(nn.Module):
         kernel_size=3,
         padding=0,
         stride=2,
+        dilation=1,
         gn_channels=8,
         dropout=0.1,
     ):
@@ -142,7 +149,9 @@ class MaskUpConv(nn.Module):
         self.upnorm = nn.GroupNorm(gn_channels, out_channels)
         convs = []
         for _ in range(depth):
-            convs.append(nn.Conv2d(out_channels, out_channels, kernel_size, 1, padding))
+            convs.append(
+                nn.Conv2d(out_channels, out_channels, kernel_size, 1, padding, dilation)
+            )
             convs.append(nn.GroupNorm(gn_channels, out_channels))
             convs.append(nn.ReLU())
             convs.append(nn.Dropout(dropout))
