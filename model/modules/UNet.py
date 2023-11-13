@@ -54,58 +54,65 @@ class UNet(nn.Module):
         self.depth = depth
         self.down_blocks = nn.ModuleList()
         self.down = nn.ModuleList()
+        self.down_ch = nn.ModuleList()
+        self.up_ch = []
         self.up = []
         self.up_blocks = []
 
-        chin = in_channels
-        chout = channels[0]
-        for idx in range(len(channels - 1)):
+        self.pre = nn.Conv2d(in_channels, channels[0], 1, 1, 0)
+        for idx in range(len(channels) - 1):
             down_blocks = []
             up_blocks = []
-            chout = channels[idx]
-            upchin = chout if Masking else chout * 2
+            ch = channels[idx]
             for _ in range(depth):
-                down_blocks.append(CONV(chin, chout))
-                up_blocks.append(CONV(upchin, chout))
+                down_blocks.append(CONV(ch, ch))
+                up_blocks.append(CONV(ch, ch))
                 if ATT:
                     if attention_channels[idx]:
-                        down_blocks.append(AttentionBlock(chout, gn_channels))
-                        up_blocks.append(AttentionBlock(chout, gn_channels))
-                chin = chout
-                upchin = chout
+                        down_blocks.append(AttentionBlock(ch, gn_channels))
+                        up_blocks.append(AttentionBlock(ch, gn_channels))
             self.down_blocks.append(nn.Sequential(*down_blocks))
-            self.down.append(nn.Conv2d(chout, chout, kernel_size, stride, padding, 1))
-            self.up.append(
-                nn.ConvTranspose2d(
-                    channels[idx + 1], chout, kernel_size, stride, padding, 1
-                )
+            self.down.append(nn.Conv2d(ch, ch, kernel_size, stride, 0))
+            self.down_ch.append(CONV(ch, channels[idx + 1]))
+            chin = (
+                channels[idx + 1]
+                if Masking or idx == len(channels) - 2
+                else channels[idx + 1] * 2
             )
+            self.up_ch.append(CONV(chin, ch))
+            self.up.append(nn.ConvTranspose2d(ch, ch, kernel_size, stride, 0, 0))
             self.up_blocks.append(nn.Sequential(*up_blocks))
 
+        self.up_ch = nn.ModuleList(self.up_ch[::-1])
         self.up = nn.ModuleList(self.up[::-1])
         self.up_blocks = nn.ModuleList(self.up_blocks[::-1])
 
         self.bottle = nn.Sequential(
-            CONV(channels[-2], channels[-1]),
+            CONV(channels[-1], channels[-1]),
             CONV(
                 channels[-1],
-                channels[-2],
+                channels[-1],
             ),
         )
-        self.post = nn.Conv2d(channels[0], out_channels, 1, 1, 0)
+        chin = channels[0] if Masking else channels[0] * 2
+        self.post = nn.Conv2d(chin, out_channels, 1, 1, 0)
 
     def forward(self, x):
+        x = self.pre(x)
         short = []
-        for block, down in zip(self.down_blocks, self.down):
+        for block, down, ch in zip(self.down_blocks, self.down, self.down_ch):
             x = block(x)
             short.append(x)
             x = down(x)
+            x = ch(x)
 
         x = self.bottle(x)
         short.reverse()
 
-        for up, block, sh in zip(self.up, self.up_blocks, short):
+        for up, block, ch, sh in zip(self.up, self.up_blocks, self.up_ch, short):
+            x = ch(x)
             x = up(x)
+            x = block(x)
             sh = crop_like(sh, x)
             if self.Masking:
                 x = sh * x
@@ -123,30 +130,42 @@ class UNet(nn.Module):
         while len(height) == 0 or len(width) == 0:
             hflag = True
             wflag = True
-            oh, ow = get_conv_output(self.bottle[1], bh, bw)
-            ih, iw = get_conv_input(self.bottle[0], bh, bw)
-            for d_b, d, u, u_b in zip(
-                self.down_blocks, self.down, self.up, self.up_blocks
+            oh, ow = self.bottle[1].get_output(bh, bw)
+            ih, iw = self.bottle[0].get_input(bh, bw)
+            for d_b, d, d_c, u_c, u, u_b in zip(
+                self.down_blocks[::-1],
+                self.down[::-1],
+                self.down_ch[::-1],
+                self.up_ch,
+                self.up,
+                self.up_blocks,
             ):
+                oh, ow = u_c.get_output(oh, ow)
                 oh, ow = get_conv_input(u, oh, ow)
+                ih, iw = d_c.get_input(ih, iw)
                 ih, iw = get_conv_input(d, ih, iw)
-                if (ih - oh) % 2 != 0:
+
+                shorth, shortw = ih, iw
+
+                for _ in range(self.depth):
+                    oh, ow = u_b[0].get_output(oh, ow)
+                    ih, iw = d_b[0].get_input(ih, iw)
+
+                if (shorth - oh) % 2 != 0:
                     hflag = False
-                if (iw - ow) % 2 != 0:
+                if (shortw - ow) % 2 != 0:
                     wflag = False
                 if not (hflag or wflag):
                     break
 
-                for _ in range(self.depth):
-                    oh, ow = get_conv_output(u_b, oh, ow)
-                    ih, iw = get_conv_input(d_b, ih, iw)
-
-            if hflag and len(height) == 0 and oh > min_output_height:
+            if hflag and len(height) == 0 and oh >= min_output_height:
                 height.append(ih)
                 height.append(oh)
-            if wflag and len(width) == 0 and ow > min_output_width:
+                height.append(bh)
+            if wflag and len(width) == 0 and ow >= min_output_width:
                 width.append(iw)
                 width.append(ow)
+                width.append(bw)
 
             bh += 1
             bw += 1
