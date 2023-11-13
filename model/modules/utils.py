@@ -18,3 +18,17 @@ def get_conv_input(conv_block, height, width):
     in_h = (height + 1) * s_h - 2 * p_h + d_h * (k_h - 1) + 1
     in_w = (width + 1) * s_w - 2 * p_w + d_w * (k_w - 1) + 1
     return in_h, in_w
+
+
+def crop_like(x, y):
+    """
+    shape = (bs, ch, h, w)
+    y is smaller than x
+    """
+    h = y[2] - x[2]
+    w = y[3] - x[3]
+    assert h % 2 == 0
+    assert w % 2 == 0
+    h = h // 2
+    w = w // 2
+    return x[:, :, h:-h, w:-w]
