@@ -1,9 +1,9 @@
 import torch
 import torch.nn as nn
 
-from Blocks import ConvBlock
-from Attn import AttentionBlock
-from utils import crop_like
+from .Blocks import ConvBlock
+from .Attn import AttentionBlock
+from .utils import crop_like, get_conv_input, get_conv_output
 
 from functools import partial
 
@@ -51,6 +51,7 @@ class UNet(nn.Module):
         )
 
         self.Masking = Masking
+        self.depth = depth
         self.down_blocks = nn.ModuleList()
         self.down = nn.ModuleList()
         self.up = []
@@ -80,6 +81,7 @@ class UNet(nn.Module):
                 )
             )
             self.up_blocks.append(nn.Sequential(*up_blocks))
+
         self.up = nn.ModuleList(self.up[::-1])
         self.up_blocks = nn.ModuleList(self.up_blocks[::-1])
 
@@ -112,3 +114,41 @@ class UNet(nn.Module):
 
         x = self.post(x)
         return x
+
+    def get_io(self, min_output_height, min_output_width):
+        # THIS IS SO JANK GOD.....
+        bh, bw = 1, 1
+        height = []
+        width = []
+        while len(height) == 0 or len(width) == 0:
+            hflag = True
+            wflag = True
+            oh, ow = get_conv_output(self.bottle[1], bh, bw)
+            ih, iw = get_conv_input(self.bottle[0], bh, bw)
+            for d_b, d, u, u_b in zip(
+                self.down_blocks, self.down, self.up, self.up_blocks
+            ):
+                oh, ow = get_conv_input(u, oh, ow)
+                ih, iw = get_conv_input(d, ih, iw)
+                if (ih - oh) % 2 != 0:
+                    hflag = False
+                if (iw - ow) % 2 != 0:
+                    wflag = False
+                if not (hflag or wflag):
+                    break
+
+                for _ in range(self.depth):
+                    oh, ow = get_conv_output(u_b, oh, ow)
+                    ih, iw = get_conv_input(d_b, ih, iw)
+
+            if hflag and len(height) == 0 and oh > min_output_height:
+                height.append(ih)
+                height.append(oh)
+            if wflag and len(width) == 0 and ow > min_output_width:
+                width.append(iw)
+                width.append(ow)
+
+            bh += 1
+            bw += 1
+
+        return height, width
