@@ -10,4 +10,5 @@ RUN pip install librosa==0.10.0 \
     h5py==3.8.0 \
     pyloudnorm==0.1.1 \
     fastsdr \
+    hydra-core=1.3.2 \
     lightning
