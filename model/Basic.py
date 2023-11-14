@@ -35,7 +35,7 @@ class BasicModel(L.LightningModule):
 
         pad_ = stft_cfg.nfft // 2 + 1
         assert self.ih >= pad_  # so I can pad
-        assert self.oh <= pad_  # so I can cut
+        assert self.oh >= pad_  # so I can cut
 
         self.stft = STFT(
             stft_cfg.nfft,
@@ -57,10 +57,9 @@ class BasicModel(L.LightningModule):
         self.padbot = self.padtop if even else self.padtop + 1
 
         even = (self.oh - pad_) % 2 == 0
-        self.cuttop = int(-(self.oh - pad_) // 2)
+        self.cuttop = int((self.oh - pad_) // 2)
         self.cutbot = self.cuttop if even else self.cuttop + 1
-        if self.cuttop == 0:
-            self.cuttop = None
+        self.cuttop = None if self.cuttop == 0 else -self.cuttop
 
     def forward(self, x):
         r, i = self.stft(x)
@@ -80,3 +79,23 @@ class BasicModel(L.LightningModule):
 
     def get_io(self):
         return self.input_length, self.output_length
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=self.lr)
+
+    def training_step(self, batch, batch_idx):
+        x, target = batch
+        y = self(x)
+        loss = F.mse_loss(y, target)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, target = batch
+        y = self(x)
+        loss = F.mse_loss(y, target)
+        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
+        return loss
+
+    def on_before_zero_grad(self, optimizer):
+        self.ema_model.update_model(self.model, self.global_step)
