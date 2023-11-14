@@ -1,3 +1,4 @@
+tag : "Testing"
 dataset_dir : "./dataset/"
 batch_size : 64
 lr : 1e-3
@@ -23,8 +24,8 @@ models :
     min_output_height : 129
     min_output_width : 50
     depth : 3
-    kernel_size : 3
-    padding : 0
+    kernel_size : 5
+    padding : 2
     stride : 2
     dilation : 1
     gn_channels : 8
