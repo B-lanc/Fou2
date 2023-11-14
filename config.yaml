@@ -1,0 +1,32 @@
+dataset_dir : "./dataset/"
+batch_size : 64
+lr : 1e-3
+
+stft : 
+  nfft : 256
+  hop_size : 64
+  freeze_parameters : True
+  padding : True
+  pad_mode : "reflect"
+  scaled : False
+
+ema : 
+  beta : 0.999
+  step_start : 2000
+
+models :
+  basic : 
+    in_channels : 2
+    out_channels : 2
+    channels : [64, 128, 256, 512]
+    attention_channels : [False, False, True]
+    min_output_height : 129
+    min_output_width : 50
+    depth : 3
+    kernel_size : 3
+    padding : 0
+    stride : 2
+    dilation : 1
+    gn_channels : 8
+    dropout : 0.1
+    Masking : False
