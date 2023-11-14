@@ -71,16 +71,11 @@ class ISTFT(nn.Module):
         nfft,
         hop_size,
         freeze_parameter=True,
-        padding=True,
-        pad_mode="reflect",
         scaled=False,
     ):
         super(ISTFT, self).__init__()
         self.nfft = nfft
         self.hop_size = hop_size
-        self.padding = padding
-        self.pad_mode = pad_mode
-        self.scaled = scaled
 
         if not hop_size:
             self.hop_size = self.nfft // 4
@@ -91,7 +86,7 @@ class ISTFT(nn.Module):
             np.arange(self.nfft)[:, None],
             np.arange(self.nfft)[None, :],
         )
-        w = np.power(ohm, w) * hann[:, None]  # (nfft, nfft)
+        w = np.power(ohm, w) * hann[None, :]  # (nfft, nfft)
         self.w = w / 2 if scaled else w / self.nfft
 
         self.conv_real = nn.Conv1d(self.nfft, self.nfft, 1, 1, bias=False)
@@ -120,11 +115,18 @@ class ISTFT(nn.Module):
             (real_stft, torch.flip(real_stft[:, 1:-1, :], dims=[1])), dim=1
         )
         full_imag = torch.cat(
-            (imag_stft, torch.flip(imag_stft[:, 1:-1, :], dims=[1])), dim=1
+            (imag_stft, -torch.flip(imag_stft[:, 1:-1, :], dims=[1])), dim=1
         )
         # (bs, nfft, nframes)
+        # print(self.conv_real.weight.data[10:20, 10:20, 0])
+        # print(self.conv_imag.weight.data[10:20, 10:20, 0])
+        # print(full_real[0, 10:20, 10:20])
+        # print(full_imag[0, 10:20, 10:20])
 
         s_real = self.conv_real(full_real) - self.conv_imag(full_imag)
+        # print(self.conv_real)
+        # print(self.conv_imag)
+        # print(s_real)
 
         # overlap
         output_samples = (nframes - 1) * self.hop_size + self.nfft
@@ -137,7 +139,6 @@ class ISTFT(nn.Module):
         y = y.squeeze()
 
         window_matrix = self.ola_window[None, :, None].repeat(1, 1, nframes)
-
         ifft_window_sum = F.fold(
             input=window_matrix,
             output_size=(1, output_samples),
@@ -145,6 +146,7 @@ class ISTFT(nn.Module):
             stride=(1, self.hop_size),
         )  # (1, 1, 1, audio_samples)
         ifft_window_sum = ifft_window_sum.squeeze()
+        ifft_window_sum = ifft_window_sum.clamp(1e-11, np.inf)
 
         y = y / ifft_window_sum[None, :]
         if length:
