@@ -34,23 +34,24 @@ class STFT(nn.Module):
         self.w = np.power(ohm, w) * hann[:, None]  # (nfft, nfft//2+1)
 
         self.conv_real = nn.Conv1d(
-            1, self.nfft // 2 + 1, self.nfft, hop_size, bias=False
+            1, self.nfft // 2 + 1, self.nfft, self.hop_size, bias=False
         )
         self.conv_imag = nn.Conv1d(
-            1, self.nfft // 2 + 1, self.nfft, hop_size, bias=False
+            1, self.nfft // 2 + 1, self.nfft, self.hop_size, bias=False
         )
         self.conv_real.weight.data = torch.Tensor(self.w.real.T)[:, None, :]
         self.conv_imag.weight.data = torch.Tensor(self.w.imag.T)[:, None, :]
 
         if freeze_parameters:
             for param in self.parameters():
-                param.require_grad_(False)
+                param.requires_grad_(False)
 
     def forward(self, x):
         """
         x => (bs, length)
         if multichannel/stereo, just add it as another batch
         """
+        assert x.dim() == 2
         x = x[:, None, :]
 
         if self.padding:
@@ -115,8 +116,12 @@ class ISTFT(nn.Module):
         assert real_stft.dim() == 3 and imag_stft.dim() == 3
         bs, _, nframes = real_stft.shape
 
-        full_real = torch.cat((real_stft, torch.flip(real_stft[:, 1:-1, :])), dim=1)
-        full_imag = torch.cat((imag_stft, torch.flip(imag_stft[:, 1:-1, :])), dim=1)
+        full_real = torch.cat(
+            (real_stft, torch.flip(real_stft[:, 1:-1, :], dims=[1])), dim=1
+        )
+        full_imag = torch.cat(
+            (imag_stft, torch.flip(imag_stft[:, 1:-1, :], dims=[1])), dim=1
+        )
         # (bs, nfft, nframes)
 
         s_real = self.conv_real(full_real) - self.conv_imag(full_imag)
@@ -126,7 +131,8 @@ class ISTFT(nn.Module):
         y = F.fold(
             input=s_real,
             output_size=(1, output_samples),
-            kernel_size=(1, self.hop_size),
+            kernel_size=(1, self.nfft),
+            stride=(1, self.hop_size),
         )  # (bs, 1, 1, audio_samples)
         y = y.squeeze()
 
