@@ -6,6 +6,12 @@ from .modules import STFT, ISTFT, EMA, UNet
 
 # TODO... possibly fix slight jank, especially with the cuttop/cutbot, but honestly it works fine
 class BasicModel(L.LightningModule):
+    """
+    This model is kinda fucked.... since it's using UNet, the size of the inputs and outputs aren't always supported
+    this is a big deal because of the STFT frequency bins, as it's size is "predetermined"
+    I'll just test to see if cutting and padding would ruin the performance...
+    """
+
     def __init__(self, model_cfg, ema_cfg, stft_cfg, lr):
         super(BasicModel, self).__init__()
 
