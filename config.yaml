@@ -1,5 +1,6 @@
 tag : "Testing"
-dataset_dir : "./dataset/"
+dataset_dir : "/dataset/"
+hdf_dir : "/dataset/hdf/"
 batch_size : 64
 lr : 1e-3
 
@@ -31,3 +32,7 @@ models :
     gn_channels : 8
     dropout : 0.1
     Masking : False
+
+prep :
+  sr : 44100
+  cons_zeros : 200000
