@@ -37,7 +37,9 @@ class BasicModel(L.LightningModule):
         )
         pad = stft_cfg.nfft // stft_cfg.hop_size if stft_cfg.padding else 0
         self.input_length = int((self.iw - 1 - pad) * stft_cfg.hop_size + stft_cfg.nfft)
-        self.output_length = int((self.ow - 1 - 4) * stft_cfg.hop_size + stft_cfg.nfft)
+        self.output_length = int(
+            (self.ow - 1 - pad) * stft_cfg.hop_size + stft_cfg.nfft
+        )
 
         pad_ = stft_cfg.nfft // 2 + 1
         assert self.ih >= pad_  # so I can pad

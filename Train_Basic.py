@@ -1,3 +1,4 @@
+import torch
 import lightning as L
 from lightning.pytorch.callbacks import ModelCheckpoint
 from torch.utils.data import DataLoader
@@ -11,6 +12,7 @@ import os
 
 @hydra.main(version_base=None, config_path=".", config_name="config")
 def main(cfg: DictConfig) -> None:
+    torch.set_float32_matmul_precision("high")
     model = BasicModel(
         cfg.models.basic,
         cfg.ema,
@@ -39,7 +41,7 @@ def main(cfg: DictConfig) -> None:
         train_set, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers
     )
     val_dl = DataLoader(
-        val_set, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers
+        val_set, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers
     )
     checkpoint_last = ModelCheckpoint(
         save_top_k=3, monitor="step", mode="max", filename="last_check_{epoch:02d}"

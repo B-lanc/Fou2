@@ -83,8 +83,15 @@ class AudioHDF(Dataset):
                 start = len(song) - self.input_length
             sub_audio = song[start : start + self.input_length]
 
-        i = sub_audio + audio
-        o = audio[self.start : self.end]
+        if random.random() > 0.3:
+            freq = 10 ** (random.random() * 2 + 0.8)
+            q = 0.5 + random.random() * 4.5
+            audio = all_pass_filter(audio, freq, q, 44100)
+            freq = 10 ** (random.random() * 2 + 0.8)
+            q = 0.5 + random.random() * 4.5
+            sub_audio = all_pass_filter(sub_audio, freq, q, 44100)
+        i = (sub_audio + audio).astype(np.float32)
+        o = (audio[self.start : self.end]).astype(np.float32)
         return i, o
 
     def __len__(self):
