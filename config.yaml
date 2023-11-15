@@ -1,6 +1,6 @@
 tag : "Testing"
 dataset_dir : "/dataset/"
-hdf_dir : "/dataset/hdf/"
+save_dir : "/saves/"
 batch_size : 64
 lr : 1e-3
 
