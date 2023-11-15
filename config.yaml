@@ -1,12 +1,16 @@
 tag : "Testing"
 dataset_dir : "/dataset/"
 save_dir : "/saves/"
-batch_size : 64
+batch_size : 4
 lr : 1e-3
+random_hop : True
+num_workers : 12
+max_epochs : 30
+min_epochs : 10
 
 stft : 
-  nfft : 256
-  hop_size : 64
+  nfft : 1024
+  hop_size : 256
   freeze_parameters : True
   padding : True
   pad_mode : "reflect"
@@ -22,11 +26,11 @@ models :
     out_channels : 2
     channels : [64, 128, 256, 512]
     attention_channels : [False, False, True]
-    min_output_height : 129
-    min_output_width : 50
-    depth : 3
-    kernel_size : 5
-    padding : 2
+    min_output_height : 513
+    min_output_width : 200
+    depth : 2
+    kernel_size : 3
+    padding : 0
     stride : 2
     dilation : 1
     gn_channels : 8

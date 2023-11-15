@@ -31,18 +31,18 @@ class AudioHDF(Dataset):
         self.random_hop = random_hop
 
         with h5py.File(self.main, "r") as f:
-            lengths = [len(i) // output_length for i in f]
+            lengths = [len(f[str(i)]) // output_length for i in f]
             self.main_lengths = SortedList(np.cumsum(lengths))
         with h5py.File(self.sub, "r") as f:
-            lengths = [len(i) // output_length for i in f]
+            lengths = [len(f[str(i)]) // output_length for i in f]
             self.sub_lengths = SortedList(np.cumsum(lengths))
 
         if input_length - output_length == 0:
             self.start = self.end = None
-        elif input_length - output_length % 2 == 0:
+        elif (input_length - output_length) % 2 == 0:
             self.start = (self.input_length - self.output_length) // 2
             self.end = -self.start
-        elif input_length - output_length % 2 == 1:
+        elif (input_length - output_length) % 2 == 1:
             self.start = (self.input_length - self.output_length) // 2 + 1
             self.end = -(self.start - 1)
         else:
@@ -61,9 +61,9 @@ class AudioHDF(Dataset):
         sub_song_idx = self.sub_lengths.bisect_left(idx)
         sub_idx = idx - self.sub_lengths[sub_song_idx - 1] if sub_song_idx > 0 else idx
 
-        start = main_idx * self.output_length
+        start = int(main_idx * self.output_length)
         if self.random_hop:
-            start = start + int((random.random - 0.5) * self.output_length)
+            start = start + int((random.random() - 0.5) * self.output_length)
         if start < 0:
             start = 0
         with h5py.File(self.main, "r") as f:
@@ -72,9 +72,9 @@ class AudioHDF(Dataset):
                 start = len(song) - self.input_length
             audio = song[start : start + self.input_length]
 
-        start = sub_idx * self.output_length
+        start = int(sub_idx * self.output_length)
         if self.random_hop:
-            start = start + int((random.random - 0.5) * self.output_length)
+            start = start + int((random.random() - 0.5) * self.output_length)
         if start < 0:
             start = 0
         with h5py.File(self.sub, "r") as f:
@@ -88,4 +88,4 @@ class AudioHDF(Dataset):
         return i, o
 
     def __len__(self):
-        return self.main_lengths[-1]
+        return int(self.main_lengths[-1])
