@@ -70,7 +70,7 @@ class BasicModel(L.LightningModule):
         self.cutbot = self.cuttop if even else self.cuttop + 1
         self.cuttop = None if self.cuttop == 0 else -self.cuttop
 
-    def forward(self, x):
+    def forward(self, x, ema=False):
         r, i = self.stft(x)
         r = r[:, None, :, :]
         i = i[:, None, :, :]
@@ -79,7 +79,8 @@ class BasicModel(L.LightningModule):
         out = F.pad(out, (0, 0, self.padbot, self.padtop), mode="reflect")
         assert out.shape[-2] == self.ih
 
-        out = self.model(out)
+        MODEL = self.ema_model if ema else self.model
+        out = MODEL(out)
         out = out[:, :, self.cutbot : self.cuttop, :]
         r, i = out[:, 0, :, :], out[:, 1, :, :]
         audio = self.istft(r, i)
