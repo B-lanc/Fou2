@@ -74,7 +74,7 @@ class Fou(L.LightningModule):
         i = i[:, None, :, :]
         _x = torch.cat((r, i), dim=1)
 
-        # _x = self.model(_x)
+        _x = self.model(_x)
         r, i = _x[:, 0, :, :], _x[:, 1, :, :]
 
         r, i = self.fft_h(r, i, True)
