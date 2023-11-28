@@ -14,6 +14,7 @@ class BasicModel(L.LightningModule):
 
     def __init__(self, model_cfg, ema_cfg, stft_cfg, lr):
         super(BasicModel, self).__init__()
+        self.save_hyperparameters()
 
         self.lr = lr
         self.model = UNet(
