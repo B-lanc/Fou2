@@ -4,6 +4,8 @@ from torch.optim.optimizer import Optimizer
 
 from .modules import EMA, MaskingUNet, STFT, ISTFT, FFT
 
+import random
+
 
 class Fou(L.LightningModule):
     def __init__(self, model_cfg, ema_cfg, stft_cfg, lr):
@@ -46,6 +48,7 @@ class Fou(L.LightningModule):
             stft_cfg.freeze_parameters,
         )
         self.fft_h = FFT(stft_cfg.nfft // 2, stft_cfg.freeze_parameters)
+        self.crit = torch.nn.L1Loss()
 
     def forward(self, x, top, ema=False):
         """
@@ -95,10 +98,19 @@ class Fou(L.LightningModule):
         return torch.optim.Adam(self.parameters(), self.lr)
 
     def training_step(self, batch, batch_idx):
-        pass
+        x, target = batch
+        top = random.random() > 0.5
+        y = self(x, top)
+        loss = self.crit(y, target)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        return loss
 
     def validation_step(self, batch, batch_idx):
-        pass
+        x, target = batch
+        y = self(x)
+        loss = self.crit(y, target)
+        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
+        return loss
 
     def on_before_zero_grad(self, optimizer: Optimizer) -> None:
         self.ema_model.update_model(self.model, self.global_step)
