@@ -47,7 +47,7 @@ class Fou(L.LightningModule):
         )
         self.fft_h = FFT(stft_cfg.nfft // 2, stft_cfg.freeze_parameters)
 
-    def forward(self, x, top):
+    def forward(self, x, top, ema=False):
         """
         top is whether to cut the last or first frequency index,
           if True, then the first frequency bin will be kept and last discarded
@@ -74,7 +74,8 @@ class Fou(L.LightningModule):
         i = i[:, None, :, :]
         _x = torch.cat((r, i), dim=1)
 
-        _x = self.model(_x)
+        MODEL = self.ema_model if ema else self.model
+        _x = MODEL(_x)
         r, i = _x[:, 0, :, :], _x[:, 1, :, :]
 
         r, i = self.fft_h(r, i, True)
