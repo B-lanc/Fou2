@@ -101,4 +101,4 @@ class Fou(L.LightningModule):
         pass
 
     def on_before_zero_grad(self, optimizer: Optimizer) -> None:
-        pass
+        self.ema_model.update_model(self.model, self.global_step)
