@@ -1,11 +1,11 @@
-tag : "TestingMDX"
+tag : "Fou2Testing1"
 dataset_dir : "/dataset/"
 save_dir : "/saves/"
 batch_size : 8
 lr : 1e-3
 random_hop : True
 num_workers : 12
-max_epochs : 30
+max_epochs : 150
 min_epochs : 10
 
 stft : 
@@ -25,10 +25,10 @@ models :
     in_channels : 2
     out_channels : 2
     channels : [48, 96, 144, 192, 240, 288]
-    attention_channels : [False, False, False, False, False]
+    attention_channels : [False, False, False, False, True]
     min_output_height : 257
     min_output_width : 150
-    depth : 3
+    depth : 4
     kernel_size : 3
     padding : 1
     stride : 2
@@ -36,6 +36,15 @@ models :
     gn_channels : 8
     dropout : 0.1
     Masking : True
+  fou :
+    in_channels : 2
+    out_channels : 2
+    channels : [48, 96, 144, 192, 240, 288]
+    depth : 4
+    attention_channels : [False, False, False, False, True]
+    width : 256
+    gn_channels : 8
+    dropout : 0.1
 
 prep :
   sr : 44100
