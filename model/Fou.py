@@ -48,7 +48,6 @@ class Fou(L.LightningModule):
             stft_cfg.freeze_parameters,
         )
         self.fft_h = FFT(stft_cfg.nfft // 2, stft_cfg.freeze_parameters)
-        self.crit = torch.nn.L1Loss()
 
     def forward(self, x, top):
         """
@@ -151,14 +150,16 @@ class Fou(L.LightningModule):
         x, target = batch
         top = random.random() > 0.5
         y = self(x, top)
-        loss = self.crit(y, target)
+        loss = torch.nn.functional.mse_loss(y, target)
+        loss = torch.sqrt(loss)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, target = batch
         y = self.both(x)
-        loss = self.crit(y, target)
+        loss = torch.nn.functional.mse_loss(y, target)
+        loss = torch.sqrt(loss)
         self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
