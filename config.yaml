@@ -1,4 +1,4 @@
-tag : "Fou2Testing1"
+tag : "MDXFinal"
 dataset_dir : "/dataset/"
 save_dir : "/saves/"
 batch_size : 8

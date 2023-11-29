@@ -39,10 +39,10 @@ def inference(model, song, input_size, output_size, batch_size=64):
 
     out = np.zeros((ch, 0))
     start = (output_size - hop) // 2 + (output_size - hop) % 2
-    end = (output_size - hop) // 2
-    out = np.concatenate((out, Y[0:ch, :end]), axis=1)
+    end = -(output_size - hop) // 2
+    out = np.concatenate((out, Y[:ch, :end]), axis=1)
     for i in range(1, Y.shape[0] // ch - 1):
-        _y = Y[i * ch : i * ch + ch, start, end]
+        _y = Y[i * ch : i * ch + ch, start:end]
         out = np.concatenate((out, _y), axis=1)
     out = np.concatenate((out, Y[-ch:, start:]), axis=1)
     out = out[:, :orig_length]
