@@ -1,7 +1,7 @@
-tag : "MDXFinal"
+tag : "Basic1"
 dataset_dir : "/dataset/"
 save_dir : "/saves/"
-batch_size : 8
+batch_size : 16
 lr : 1e-3
 random_hop : True
 num_workers : 12
@@ -10,7 +10,7 @@ min_epochs : 10
 
 stft : 
   nfft : 512
-  hop_size : 256
+  hop_size : 128
   freeze_parameters : True
   padding : True
   pad_mode : "reflect"
@@ -24,11 +24,11 @@ models :
   basic : 
     in_channels : 2
     out_channels : 2
-    channels : [48, 96, 144, 192, 240, 288]
+    channels : [64, 128, 192, 256, 320, 384]
     attention_channels : [False, False, False, False, True]
     min_output_height : 257
     min_output_width : 150
-    depth : 4
+    depth : 2
     kernel_size : 3
     padding : 1
     stride : 2
@@ -39,8 +39,8 @@ models :
   fou :
     in_channels : 2
     out_channels : 2
-    channels : [48, 96, 144, 192, 240, 288]
-    depth : 4
+    channels : [64, 128, 192, 256, 320, 384]
+    depth : 2
     attention_channels : [False, False, False, False, True]
     width : 256
     gn_channels : 8
