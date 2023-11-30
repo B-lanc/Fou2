@@ -1,3 +1,5 @@
+import torch
+
 def get_conv_output(conv_block, height, width):
     k_h, k_w = conv_block.kernel_size
     s_h, s_w = conv_block.stride
@@ -34,3 +36,8 @@ def crop_like(x, y):
     hh = -h if h else None
     ww = -w if w else None
     return x[:, :, h:hh, w:ww]
+
+
+def RMSE_Loss(eps):
+    def _rmse(x, y):
+        return torch.sqrt(eps + torch.nn.MSELoss(x, y))

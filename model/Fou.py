@@ -2,7 +2,7 @@ import torch
 import lightning as L
 from torch.optim.optimizer import Optimizer
 
-from .modules import EMA, MaskingUNet, STFT, ISTFT, FFT
+from .modules import EMA, MaskingUNet, STFT, ISTFT, FFT, RMSE_Loss
 
 import random
 
@@ -48,6 +48,7 @@ class Fou(L.LightningModule):
             stft_cfg.freeze_parameters,
         )
         self.fft_h = FFT(stft_cfg.nfft // 2, stft_cfg.freeze_parameters)
+        self.crit = RMSE_Loss(1e-8)
 
     def forward(self, x, top):
         """
@@ -150,16 +151,14 @@ class Fou(L.LightningModule):
         x, target = batch
         top = random.random() > 0.5
         y = self(x, top)
-        loss = torch.nn.functional.mse_loss(y, target)
-        # loss = torch.sqrt(loss)
+        loss = self.crit(y, target)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, target = batch
         y = self.both(x)
-        loss = torch.nn.functional.mse_loss(y, target)
-        # loss = torch.sqrt(loss)
+        loss = self.crit(y, target)
         self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
