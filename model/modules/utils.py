@@ -40,4 +40,5 @@ def crop_like(x, y):
 
 def RMSE_Loss(eps):
     def _rmse(x, y):
-        return torch.sqrt(eps + torch.nn.MSELoss(x, y))
+        return torch.sqrt(eps + torch.nn.functional.mse_loss(x, y))
+    return _rmse
