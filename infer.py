@@ -4,7 +4,7 @@ import numpy as np
 import math
 
 
-def inference(model, song, input_size, output_size, batch_size=64):
+def inference(model, song, input_size, output_size, batch_size=64, ema=False):
     """
     song => (bs, length)
     """
@@ -34,7 +34,7 @@ def inference(model, song, input_size, output_size, batch_size=64):
         start = i * batch_size
         end = start + batch_size
         end = X.shape[0] if end > X.shape[0] else end
-        _y = model(X[start:end]).detach().cpu().numpy()
+        _y = model(X[start:end], ema).detach().cpu().numpy()
         Y = np.concatenate((Y, _y), axis=0)
 
     out = np.zeros((ch, 0))
