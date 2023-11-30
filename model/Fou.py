@@ -151,7 +151,7 @@ class Fou(L.LightningModule):
         top = random.random() > 0.5
         y = self(x, top)
         loss = torch.nn.functional.mse_loss(y, target)
-        loss = torch.sqrt(loss)
+        # loss = torch.sqrt(loss)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
@@ -159,7 +159,7 @@ class Fou(L.LightningModule):
         x, target = batch
         y = self.both(x)
         loss = torch.nn.functional.mse_loss(y, target)
-        loss = torch.sqrt(loss)
+        # loss = torch.sqrt(loss)
         self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
