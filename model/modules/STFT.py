@@ -118,15 +118,8 @@ class ISTFT(nn.Module):
             (imag_stft, -torch.flip(imag_stft[:, 1:-1, :], dims=[1])), dim=1
         )
         # (bs, nfft, nframes)
-        # print(self.conv_real.weight.data[10:20, 10:20, 0])
-        # print(self.conv_imag.weight.data[10:20, 10:20, 0])
-        # print(full_real[0, 10:20, 10:20])
-        # print(full_imag[0, 10:20, 10:20])
 
         s_real = self.conv_real(full_real) - self.conv_imag(full_imag)
-        # print(self.conv_real)
-        # print(self.conv_imag)
-        # print(s_real)
 
         # overlap
         output_samples = (nframes - 1) * self.hop_size + self.nfft
