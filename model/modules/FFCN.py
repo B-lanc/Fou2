@@ -21,11 +21,11 @@ class FourierUnit(nn.Module):
         y = torch.cat((yr, yi), dim=1)
         y = self.block(y)
         yr, yi = y[:, :ch, :, :], y[:, ch:, :, :]
-        x, _ = self.irfft(yr, yi)
+        x = self.irfft(yr, yi)
         return x
 
     def forward(self, x):
-        (_, ch, h, w) = x.shape
+        (_, _, h, _) = x.shape
         bot = x[:, :, :-1, :]
         top = x[:, :, 1:, :]
 
