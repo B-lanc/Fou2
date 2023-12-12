@@ -15,8 +15,8 @@ class FourierUnit(nn.Module):
 
         self.block = ConvBlock(2 * channels, 2 * channels, chgn, dropout, 1, 1, 0)
 
-    def forward(self, x):
-        (bs, ch, h, w) = x.shape
+    def _forward(self, x):
+        (_, ch, _, _) = x.shape
         yr, yi = self.rfft(x)
         y = torch.cat((yr, yi), dim=1)
         y = self.block(y)
@@ -24,8 +24,19 @@ class FourierUnit(nn.Module):
         x, _ = self.irfft(yr, yi)
         return x
 
+    def forward(self, x):
+        (_, ch, h, w) = x.shape
+        bot = x[:, :, :-1, :]
+        top = x[:, :, 1:, :]
+
+        bot = self._forward(bot)
+        top = self._forward(top)
+
+        x = torch.cat((bot[:, :, : h // 2, :], top[:, :, h // 2 - 1 :, :]), dim=2)
+        return x
+
     def rfft(self, x):
-        (bs, ch, h, w) = x.shape
+        (_, _, _, w) = x.shape
 
         yr, yi = self.fft_w(x, None)
         yr, yi = yr[:, :, :, : w // 2 + 1], yi[:, :, :, : w // 2 + 1]
