@@ -18,10 +18,10 @@ class FFT(nn.Module):
         w = np.power(ohm, kn)
         iw = np.power(iohm, kn) / window_size
 
-        self.conv_real = nn.Conv1d(1, window_size, window_size, 1, 0)
-        self.conv_imag = nn.Conv1d(1, window_size, window_size, 1, 0)
-        self.iconv_real = nn.Conv1d(1, window_size, window_size, 1, 0)
-        self.iconv_imag = nn.Conv1d(1, window_size, window_size, 1, 0)
+        self.conv_real = nn.Conv1d(1, window_size, window_size, 1, 0, bias=False)
+        self.conv_imag = nn.Conv1d(1, window_size, window_size, 1, 0, bias=False)
+        self.iconv_real = nn.Conv1d(1, window_size, window_size, 1, 0, bias=False)
+        self.iconv_imag = nn.Conv1d(1, window_size, window_size, 1, 0, bias=False)
 
         self.conv_real.weight.data = torch.Tensor(w.real[:, None, :])
         self.conv_imag.weight.data = torch.Tensor(w.imag[:, None, :])
