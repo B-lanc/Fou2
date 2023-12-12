@@ -2,7 +2,9 @@ import torch
 import torch.nn.functional as F
 import lightning as L
 
-from .modules import STFT, ISTFT, EMA, UNet
+from .modules import STFT, ISTFT, EMA, UNet, RMSE_Loss
+
+crit = RMSE_Loss(1e-8)
 
 # TODO... possibly fix slight jank, especially with the cuttop/cutbot, but honestly it works fine
 class BasicModel(L.LightningModule):
@@ -96,14 +98,14 @@ class BasicModel(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, target = batch
         y = self(x)
-        loss = F.mse_loss(y, target)
+        loss = crit(y, target)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
         return loss
 
     def validation_step(self, batch, batch_idx):
         x, target = batch
         y = self(x)
-        loss = F.mse_loss(y, target)
+        loss = crit(y, target)
         self.log("val_loss", loss, on_epoch=True, prog_bar=True)
         return loss
 
