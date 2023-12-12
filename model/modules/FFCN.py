@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from .Blocks import ConvBlock
-from . import FFT
+from .FFT import FFT
 
 
 class FourierUnit(nn.Module):
@@ -77,6 +77,7 @@ class FFC(nn.Module):
 
         self.l_norm = nn.GroupNorm(chgn, channels)
         self.g_norm = nn.GroupNorm(chgn, channels)
+        self.dropout = nn.Dropout(dropout)
 
     def forward(self, xl, xg):
 
@@ -88,7 +89,7 @@ class FFC(nn.Module):
         xl = ll + gl
         xg = lg + gg
 
-        xl = F.relu(self.l_norm(xl))
-        xg = F.relu(self.g_norm(xg))
+        xl = self.dropout(F.relu(self.l_norm(xl)))
+        xg = self.dropout(F.relu(self.g_norm(xg)))
 
         return xl, xg
