@@ -1,3 +1,4 @@
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -6,38 +7,76 @@ from . import FFT
 
 
 class FourierUnit(nn.Module):
-    def __init__(self, channels, width, height, freeze_parameters):
+    def __init__(self, channels, width, height, freeze_parameters, chgn, dropout):
         super(FourierUnit, self).__init__()
 
         self.fft_w = FFT(width, freeze_parameters)
         self.fft_h = FFT(height, freeze_parameters)
 
-        self.block = ConvBlock(channels, channels)
+        self.block = ConvBlock(2 * channels, 2 * channels, chgn, dropout, 1, 1, 0)
 
     def forward(self, x):
+        (bs, ch, h, w) = x.shape
+        yr, yi = self.rfft(x)
+        y = torch.cat((yr, yi), dim=1)
+        y = self.block(y)
+        yr, yi = y[:, :ch, :, :], y[:, ch:, :, :]
+        x, _ = self.irfft(yr, yi)
         return x
+
+    def rfft(self, x):
+        (bs, ch, h, w) = x.shape
+
+        yr, yi = self.fft_w(x, None)
+        yr, yi = yr[:, :, :, : w // 2 + 1], yi[:, :, :, : w // 2 + 1]
+        yr, yi = yr.permute(0, 1, 3, 2), yi.permute(0, 1, 3, 2)
+
+        yr, yi = self.fft_h(yr, yi)
+        yr, yi = yr.permute(0, 1, 3, 2), yi.permute(0, 1, 3, 2)
+
+        return yr, yi
+
+    def irfft(self, xr, xi):
+        yr, yi = xr.permute(0, 1, 3, 2), xi.permute(0, 1, 3, 2)
+        yr, yi = self.fft_h(yr, yi, True)
+
+        yr, yi = yr.permute(0, 1, 3, 2), yi.permute(0, 1, 3, 2)
+        yr = torch.cat((yr, torch.flip(yr[:, :, :, 1:-1], dims=[3])), dim=3)
+        yi = torch.cat((yi, -torch.flip(yi[:, :, :, 1:-1], dims=[3])), dim=3)
+        yr, _ = self.fft_w(yr, yi, True)
+
+        return yr
 
 
 class SpectralTransform(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, channels, chgn, dropout, freeze_parameters, width, height):
         super(SpectralTransform, self).__init__()
 
-        self.f
+        self.conv_in = ConvBlock(channels, channels, chgn, dropout, 1, 1, 0)
+        self.fu = FourierUnit(channels, width, height, freeze_parameters, chgn, dropout)
+        self.conv_out = nn.Conv2d(channels, channels, 1, 1, 0)
 
-        self.out = nn.Conv2d(out_channels, out_channels, 1, 1, 0)
+    def forward(self, x):
+        x = self.conv_in(x)
+        y = self.fu(x)
+        y = y + x
+        y = self.conv_out(y)
+        return y
 
 
 class FFC(nn.Module):
-    def __init__(self, in_channels, out_channels):
+    def __init__(self, channels, chgn, dropout, freeze_parameters, width, height):
         super(FFC, self).__init__()
 
-        self.l_l = nn.Conv2d(in_channels, out_channels, 3, 1, 1)
-        self.l_g = nn.Conv2d(in_channels, out_channels, 3, 1, 1)
-        self.g_l = nn.Conv2d(in_channels, out_channels, 3, 1, 1)
-        self.g_g = SpectralTransform(in_channels, out_channels)
+        self.l_l = nn.Conv2d(channels, channels, 3, 1, 1)
+        self.l_g = nn.Conv2d(channels, channels, 3, 1, 1)
+        self.g_l = nn.Conv2d(channels, channels, 3, 1, 1)
+        self.g_g = SpectralTransform(
+            channels, chgn, dropout, freeze_parameters, width, height
+        )
 
-        self.l_norm = nn.GroupNorm(8, out_channels)
-        self.g_norm = nn.GroupNorm(8, out_channels)
+        self.l_norm = nn.GroupNorm(chgn, channels)
+        self.g_norm = nn.GroupNorm(chgn, channels)
 
     def forward(self, xl, xg):
 
