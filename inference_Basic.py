@@ -17,7 +17,9 @@ def main(args, cfg):
     input_length, output_length = model.get_io()
 
     with torch.no_grad():
-        res = inference(model, audio, input_length, output_length, args.batch_size, args.ema)
+        res = inference(
+            model, audio, input_length, output_length, args.batch_size, args.ema
+        )
     sf.write(args.output, res.T, args.sr, "PCM_24")
 
 
