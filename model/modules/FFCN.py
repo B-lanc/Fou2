@@ -7,11 +7,11 @@ from .FFT import FFT
 
 
 class FourierUnit(nn.Module):
-    def __init__(self, channels, width, height, freeze_parameters, chgn, dropout):
+    def __init__(self, channels, fft_w, fft_h, chgn, dropout):
         super(FourierUnit, self).__init__()
 
-        self.fft_w = FFT(width, freeze_parameters)
-        self.fft_h = FFT(height, freeze_parameters)
+        self.fft_w = fft_w
+        self.fft_h = fft_h
 
         self.block = ConvBlock(2 * channels, 2 * channels, chgn, dropout, 1, 1, 0)
 
@@ -60,11 +60,11 @@ class FourierUnit(nn.Module):
 
 
 class SpectralTransform(nn.Module):
-    def __init__(self, channels, chgn, dropout, freeze_parameters, width, height):
+    def __init__(self, channels, chgn, dropout, fft_w, fft_h):
         super(SpectralTransform, self).__init__()
 
         self.conv_in = ConvBlock(channels, channels, chgn, dropout, 1, 1, 0)
-        self.fu = FourierUnit(channels, width, height, freeze_parameters, chgn, dropout)
+        self.fu = FourierUnit(channels, fft_w, fft_h, chgn, dropout)
         self.conv_out = nn.Conv2d(channels, channels, 1, 1, 0)
 
     def forward(self, x):
@@ -76,15 +76,13 @@ class SpectralTransform(nn.Module):
 
 
 class FFC(nn.Module):
-    def __init__(self, channels, chgn, dropout, freeze_parameters, width, height):
+    def __init__(self, channels, chgn, dropout, fft_w, fft_h):
         super(FFC, self).__init__()
 
         self.l_l = nn.Conv2d(channels, channels, 3, 1, 1)
         self.l_g = nn.Conv2d(channels, channels, 3, 1, 1)
         self.g_l = nn.Conv2d(channels, channels, 3, 1, 1)
-        self.g_g = SpectralTransform(
-            channels, chgn, dropout, freeze_parameters, width, height
-        )
+        self.g_g = SpectralTransform(channels, chgn, dropout, fft_w, fft_h)
 
         self.l_norm = nn.GroupNorm(chgn, channels)
         self.g_norm = nn.GroupNorm(chgn, channels)

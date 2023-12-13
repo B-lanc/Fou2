@@ -3,7 +3,7 @@ import torch.nn as nn
 import lightning as L
 from torch.optim.optimizer import Optimizer
 
-from .modules import EMA, STFT, ISTFT, FFC, ConvBlock
+from .modules import EMA, STFT, ISTFT, FFC, ConvBlock, FFT
 
 import random
 
@@ -13,15 +13,16 @@ class Fou2Model(nn.Module):
         self, levels, channel, depth, chgn, dropout, freeze_parameters, width, height
     ):
         super(Fou2Model, self).__init__()
+
+        self.fft_w = FFT(width, freeze_parameters)
+        self.fft_h = FFT(height, freeze_parameters)
         self.conv_in = ConvBlock(2, channel, chgn, dropout, 1, 1, 0)
 
         self.blocks = nn.ModuleList()
         for _ in range(levels):
             bl = nn.ModuleList()
             for _ in range(depth):
-                bl.append(
-                    FFC(channel, channel, dropout, freeze_parameters, width, height)
-                )
+                bl.append(FFC(channel, channel, dropout, self.fft_w, self.fft_h))
             self.blocks.append(bl)
         self.conv_out = nn.Conv2d(channel, 2, 1, 1, 0)
 
@@ -96,9 +97,13 @@ class Fou2(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, target = batch
+        print(1)
         y = self(x)
+        print(2)
         loss = self.crit(y, target)
+        print(3)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        print(4)
         return loss
 
     def validation_step(self, batch, batch_idx):
