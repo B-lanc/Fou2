@@ -97,13 +97,9 @@ class Fou2(L.LightningModule):
 
     def training_step(self, batch, batch_idx):
         x, target = batch
-        print(1)
         y = self(x)
-        print(2)
         loss = self.crit(y, target)
-        print(3)
         self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
-        print(4)
         return loss
 
     def validation_step(self, batch, batch_idx):

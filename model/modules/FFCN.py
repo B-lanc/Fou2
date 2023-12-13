@@ -24,6 +24,17 @@ class FourierUnit(nn.Module):
         x = self.irfft(yr, yi)
         return x
 
+    def _forward2(self, x):
+        (_, ch, _, _) = x.shape
+        y = torch.fft.rfftn(x, dim=[3, 2])
+        yr, yi = y.real, y.imag
+        y = torch.cat((yr, yi), dim=1)
+        y = self.block(y)
+        yr, yi = y[:, :ch, :, :], y[:, ch:, :, :]
+        y = torch.complex(yr, yi)
+        x = torch.fft.irfftn(y, dim=[3, 2])
+        return x
+
     def forward(self, x):
         (_, _, h, _) = x.shape
         bot = x[:, :, :-1, :]
