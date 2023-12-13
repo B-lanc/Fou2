@@ -40,8 +40,8 @@ class FourierUnit(nn.Module):
         bot = x[:, :, :-1, :]
         top = x[:, :, 1:, :]
 
-        bot = self._forward(bot)
-        top = self._forward(top)
+        bot = self._forward2(bot)
+        top = self._forward2(top)
 
         x = torch.cat((bot[:, :, : h // 2, :], top[:, :, h // 2 - 1 :, :]), dim=2)
         return x
