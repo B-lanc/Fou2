@@ -19,25 +19,27 @@ def main(args):
     song_names = glob.glob(os.path.join(inst_path, "*"))
     song_names = [os.path.basename(song) for song in song_names]
 
+    device = "cuda" if args.cuda else "cpu"
+    model = BasicModel.load_from_checkpoint(
+        args.model_checkpoint_file,
+    ).to(device)
+    input_length, output_length = model.get_io()
+
     results = {}
     for song in song_names:
         print("Loading song :", song)
         vox, _ = librosa.load(os.path.join(vox_path, song), sr=args.sr, mono=args.mono)
-        inst, _ = librosa.load(os.path.join(inst_path, song), sr=args.sr, mono=args.mono)
+        inst, _ = librosa.load(
+            os.path.join(inst_path, song), sr=args.sr, mono=args.mono
+        )
         audio = vox + inst
-
-        device = "cuda" if args.cuda else "cpu"
-        model = BasicModel.load_from_checkpoint(
-            args.model_checkpoint_file,
-        ).to(device)
-        input_length, output_length = model.get_io()
 
         with torch.no_grad():
             res = inference(
                 model, audio, input_length, output_length, args.batch_size, args.ema
             )
         results[song] = fastsdr(inst.T[None, :, :], res.T[None, :, :])
-    
+
     comb = 0
     testing = 0
     for song, res in results.items():
@@ -50,7 +52,6 @@ def main(args):
     print(comb)
     sep = np.concatenate(results.values(), axis=0)
     print(np.nanmean(sep))
-
 
 
 if __name__ == "__main__":
