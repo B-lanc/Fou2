@@ -13,7 +13,7 @@ import os
 import glob
 
 
-def main(args, cfg):
+def main(args):
     inst_path = os.path.join(args.test_path, "instrumentals")
     vox_path = os.path.join(args.test_path, "vocals")
     song_names = glob.glob(os.path.join(inst_path, "*"))
@@ -64,5 +64,4 @@ if __name__ == "__main__":
     parser.add_argument("--batch_size", default=64)
 
     args = parser.parse_args()
-    cfg = OmegaConf.load("config.yaml")
-    main(args, cfg)
+    main(args)
