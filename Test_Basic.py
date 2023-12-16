@@ -24,6 +24,7 @@ def main(args):
         args.model_checkpoint_file,
     ).to(device)
     input_length, output_length = model.get_io()
+    print(input_length, output_length)
 
     results = {}
     for song in song_names:
@@ -50,7 +51,7 @@ def main(args):
         testing = res
     comb = comb / len(results)
     print(comb)
-    sep = np.concatenate(results.values(), axis=0)
+    sep = np.concatenate(list(results.values()), axis=0)
     print(np.nanmean(sep))
 
 
