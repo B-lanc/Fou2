@@ -1,7 +1,11 @@
+import torch
 import torch.nn as nn
 import lightning as L
 
 from .modules import STFT, ISTFT, EMA
+
+
+crit = torch.nn.functional.l1_loss
 
 
 class CBAD(nn.Module):
@@ -139,11 +143,13 @@ class FoUnet(nn.Module):
 
 
 class Fouivre(L.LightningModule):
-    def __init__(self, cfg, ema_cfg):
+    def __init__(self, cfg, ema_cfg, lr):
         super(Fouivre, self).__init__()
         hop_size = cfg.freq - 1
         nfft = hop_size * 2
+
         self.io = hop_size ** 2
+        self.lr = lr
 
         self.stft = STFT(nfft, hop_size, True, True)
         self.itft = ISTFT(nfft, hop_size, True)
@@ -153,3 +159,40 @@ class Fouivre(L.LightningModule):
 
     def get_io(self):
         return self.io
+
+    def forward(self, x, ema=False):
+        r, i = self.stft(x)
+        r = r[:, None, :, :]
+        i = i[:, None, :, :]
+        z = torch.cat((r, i), dim=1)  # (bs, 2, nfft//2+1, nframes)
+
+        MODEL = self.ema_model if ema else self.model
+        z, t = MODEL(z, x)
+
+        r, i = z[:, 0, :, :], z[:, 1, :, :]
+        z = self.istft(r, i)
+
+        return z + t
+
+    def get_io(self):
+        return self.io_length
+
+    def configure_optimizers(self):
+        return torch.optim.Adam(self.parameters(), lr=self.lr)
+
+    def training_step(self, batch, batch_idx):
+        x, target = batch
+        y = self(x)
+        loss = crit(y, target)
+        self.log("train_loss", loss, on_step=True, on_epoch=True, prog_bar=True)
+        return loss
+
+    def validation_step(self, batch, batch_idx):
+        x, target = batch
+        y = self(x)
+        loss = crit(y, target)
+        self.log("val_loss", loss, on_epoch=True, prog_bar=True)
+        return loss
+
+    def on_before_zero_grad(self, optimizer):
+        self.ema_model.update_model(self.model, self.global_step)
