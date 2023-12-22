@@ -152,7 +152,7 @@ class Fouivre(L.LightningModule):
         self.lr = lr
 
         self.stft = STFT(nfft, hop_size, True, True)
-        self.itft = ISTFT(nfft, hop_size, True)
+        self.istft = ISTFT(nfft, hop_size, True)
 
         self.model = FoUnet(cfg)
         self.ema_model = EMA(self.model, ema_cfg.beta, ema_cfg.step_start)
@@ -165,9 +165,12 @@ class Fouivre(L.LightningModule):
         r = r[:, None, :, :]
         i = i[:, None, :, :]
         z = torch.cat((r, i), dim=1)  # (bs, 2, nfft//2+1, nframes)
+        x = x[:, None, :]
 
         MODEL = self.ema_model if ema else self.model
         z, t = MODEL(z, x)
+
+        t = t[:, 0, :]
 
         r, i = z[:, 0, :, :], z[:, 1, :, :]
         z = self.istft(r, i)
