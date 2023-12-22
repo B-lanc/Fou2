@@ -1,7 +1,7 @@
-tag : "FouTesting2"
+tag : "Basic2Testing"
 dataset_dir : "/dataset/"
 save_dir : "/saves/"
-batch_size : 8
+batch_size : 2
 lr : 1e-3
 random_hop : True
 num_workers : 12
@@ -38,11 +38,12 @@ models :
     Masking : True
   basic2 : 
     channels : 256
-    levels : 8
+    kernel_size : 3
+    levels : 12
     depth : 3
     chgn : 8 
     dropout : 0.2
-    io : 256
+    io : 257
   basic3 : 
     channels : 64
     depth : 5
@@ -51,7 +52,7 @@ models :
     resu_channels : [128, 256]
     chgn : 8 
     dropout : 0.2
-    io : 256
+    io : 257
   fou :
     in_channels : 2
     out_channels : 2
@@ -62,12 +63,22 @@ models :
     gn_channels : 8
     dropout : 0.1
   fou2 :
-    channel : 16
-    level : 4
+    channel : 64
+    level : 12
     depth : 2
     width : 256
     gn_channels : 8
+    dropout : 0.2
+  fouivre : 
+    freq : 257
+    channels : [64, 128, 192, 256, 320]
+    depth : 2
+    chgn : 8
     dropout : 0.1
+    kernel_size : 3
+    stride : 2
+    n_heads : 8
+    bottle_depth : 3
 
 prep :
   sr : 44100
