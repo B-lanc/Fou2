@@ -174,9 +174,6 @@ class Fouivre(L.LightningModule):
 
         return z + t
 
-    def get_io(self):
-        return self.io_length
-
     def configure_optimizers(self):
         return torch.optim.Adam(self.parameters(), lr=self.lr)
 
