@@ -49,9 +49,6 @@ class FoUnet(nn.Module):
     def __init__(self, cfg):
         super(FoUnet, self).__init__()
 
-        assert len(cfg.attention_channels) == (len(cfg.channels))
-        assert len(cfg.channels) > 1
-
         chgn = cfg.chgn
         drop = cfg.dropout
         kern = cfg.kernel_size
@@ -64,7 +61,7 @@ class FoUnet(nn.Module):
         self.conv_out = CBAD(2, False, cfg.channels[0], 2, 1, 1, 0, 1, drop)
 
         chin = cfg.channels[0]
-        for ch, att in zip(cfg.channels, cfg.attention_channels):
+        for ch in cfg.channels:
             enc = []
             dec = []
             enc.append(CBAD(2, False, chin, ch, 1, 1, 0, chgn, drop))
@@ -74,14 +71,16 @@ class FoUnet(nn.Module):
             for _ in range(cfg.depth):
                 enc.append(CBAD(2, False, ch, ch, kern, 1, pad, chgn, drop))
                 dec.append(CBAD(2, False, chin, chin, kern, 1, pad, chgn, drop))
-                if att:
-                    enc.append(ATT(ch, cfg.n_heads, drop))
-                    dec.append(ATT(chin, cfg.n_heads, drop))
 
             self.encoder.append(nn.Sequential(*enc))
             self.decoder.insert(0, nn.Sequential(*dec))
 
             chin = ch
+
+        self.bottle = nn.ModuleList()
+        ch = cfg.channels[-1]
+        for _ in range(cfg.att_depth):
+            self.bottle.append(ATT(ch, cfg.n_heads, drop))
 
     def forward(self, z):
         z = self.conv_in(z)
@@ -91,6 +90,9 @@ class FoUnet(nn.Module):
             z = enc(z)
             short.append(z)
         short.reverse()
+
+        for att in self.bottle:
+            z = att(z)
 
         for i in range(len(self.decoder)):
             z = z * short[i]

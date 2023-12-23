@@ -1,7 +1,7 @@
-tag : "FouivreTesting"
+tag : "FoumouNoatt2"
 dataset_dir : "/dataset/"
 save_dir : "/saves/"
-batch_size : 2
+batch_size : 16
 lr : 1e-3
 random_hop : True
 num_workers : 12
@@ -81,8 +81,8 @@ models :
     bottle_depth : 3
   foumou : 
     freq : 257
-    channels : [64, 128, 192, 256, 320]
-    attention_channels : [False, False, False, False, True]
+    channels : [64, 128, 192, 256, 320, 384]
+    att_depth : 0
     depth : 2
     chgn : 8
     dropout : 0.1
