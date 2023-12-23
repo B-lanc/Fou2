@@ -1,4 +1,4 @@
-tag : "Basic2Testing"
+tag : "FouivreTesting"
 dataset_dir : "/dataset/"
 save_dir : "/saves/"
 batch_size : 2
@@ -79,6 +79,16 @@ models :
     stride : 2
     n_heads : 8
     bottle_depth : 3
+  foumou : 
+    freq : 257
+    channels : [64, 128, 192, 256, 320]
+    attention_channels : [False, False, False, False, True]
+    depth : 2
+    chgn : 8
+    dropout : 0.1
+    kernel_size : 3
+    stride : 2
+    n_heads : 8
 
 prep :
   sr : 44100
