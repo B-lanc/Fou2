@@ -104,6 +104,7 @@ class FoUnet(nn.Module):
 class Foumou(L.LightningModule):
     def __init__(self, cfg, ema_cfg, lr):
         super(Foumou, self).__init__()
+        self.save_hyperparameters()
         hop_size = cfg.freq - 1
         nfft = hop_size * 2
 

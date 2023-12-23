@@ -145,6 +145,7 @@ class FoUnet(nn.Module):
 class Fouivre(L.LightningModule):
     def __init__(self, cfg, ema_cfg, lr):
         super(Fouivre, self).__init__()
+        self.save_hyperparameters()
         hop_size = cfg.freq - 1
         nfft = hop_size * 2
 
