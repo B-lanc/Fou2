@@ -1,8 +1,8 @@
-tag : "FoumouNoatt2"
+tag : "Foumounoatt4"
 dataset_dir : "/dataset/"
 save_dir : "/saves/"
-batch_size : 16
-lr : 1e-3
+batch_size : 4
+lr : 2e-3
 random_hop : True
 num_workers : 12
 max_epochs : 150
@@ -80,8 +80,10 @@ models :
     n_heads : 8
     bottle_depth : 3
   foumou : 
-    freq : 257
-    channels : [64, 128, 192, 256, 320, 384]
+    nfft : 256
+    hop_size : 64
+    width : 513
+    channels : [64, 128, 256, 512]
     att_depth : 0
     depth : 2
     chgn : 8

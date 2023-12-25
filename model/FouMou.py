@@ -107,10 +107,11 @@ class Foumou(L.LightningModule):
     def __init__(self, cfg, ema_cfg, lr):
         super(Foumou, self).__init__()
         self.save_hyperparameters()
-        hop_size = cfg.freq - 1
-        nfft = hop_size * 2
+        hop_size = cfg.hop_size
+        nfft = cfg.nfft
+        width = cfg.width
 
-        self.io = hop_size ** 2
+        self.io = hop_size * (width - 1)
         self.lr = lr
 
         self.stft = STFT(nfft, hop_size, True, True)
